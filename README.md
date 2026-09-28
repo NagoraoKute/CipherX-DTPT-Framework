@@ -29,25 +29,19 @@ Our framework identifies the four mandated cyber threats using pure quantum stat
 SIH-DTPT-Framework/
 ├── frontend/                  # React UI for signature execution & visualization
 ├── backend/
-
 │   ├── api/                   # FastAPI ETSI GS QKD 014 REST endpoints
 │   ├── quantum_engine/
-
 │   │   ├── teleportation.py         # Bell-State generation & Pauli corrections
 │   │   ├── decoy_states.py          # Decoy & Signal state modulation
 │   │   └── distribution_visualizer.py # Plots Poisson distributions & threshold shifts
 │   ├── watchdog/
-
 │   │   ├── attack_simulation_harness.py # Simulates Forgery, Replay, & PNS attacks
 │   │   ├── fidelity.py              # Enforces the F > 66.7% limit
 │   │   └── thresholds.py            # Enforces the bounds
 │   └── main.py
-
 ├── docs/
-
 │   ├── TRD.md                 # Technical Requirements Document
 │   └── DTPT_Architecture.png
-
 └── README.md
 
 ```
