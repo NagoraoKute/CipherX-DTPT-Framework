@@ -1,77 +1,68 @@
-# Dual-Threshold Projective Teleportation (DTPT) Framework
+## Dual-Threshold Projective Teleportation (DTPT) Framework
 
-![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
-![Qiskit](https://img.shields.io/badge/Qiskit-Supported-purple)
-![FastAPI](https://img.shields.io/badge/FastAPI-Ready-009688)
-![License](https://img.shields.io/badge/License-MIT-green)
+The Dual-Threshold Projective Teleportation (DTPT) Framework is a deterministic, AI-free software architecture designed to secure teleportation-based Quantum Digital Signatures (QDS).
 
-> **Official Smart India Hackathon (SIH) Solution**
-> 
-> For full mathematical proofs, threat models, and extended architecture details, please refer to the official document: **Quantum Digital Signature SIH Solution.pdf**.
+Moving beyond classical cryptographic assumptions, this framework relies entirely on **Information-Theoretic Security (ITS)** guaranteed by the laws of quantum mechanics. We explicitly avoid the use of Artificial Intelligence or Machine Learning. Instead, our detection layer utilizes **Gottesman-Chuang (GC) style QDS modeling**, Pauli eigenstates, projective measurements, and rigorous statistical analysis of measurement outcomes to detect threats.
 
-## 📖 Executive Summary
+To protect against Photon Number Splitting (PNS) attacks inherent in real-world telecommunications, the framework integrates the **Decoy-State Method**, utilizing simulated Optical Quantum Random Number Generator (OQRNG) seeds to mix signal and decoy states.
 
-As the world transitions to quantum-safe communications, relying on classical encryption or computationally heavy mathematical algorithms is only a temporary fix. True, long-term security requires **Information-Theoretic Security**—protection guaranteed by the laws of physics.
+## 🧠 The Threat Detection Matrix (Zero AI)
 
-The **Dual-Threshold Projective Teleportation (DTPT) Framework** is a highly practical, software-defined architecture for Quantum Digital Signatures. Designed explicitly without Artificial Intelligence or Machine Learning, this framework relies entirely on **Pauli eigenstates, projective measurements, strict statistical thresholds, and the Decoy-State Method**. It successfully bridges theoretical quantum physics with the hardware realities of modern telecommunications.
+Our framework identifies the four mandated cyber threats using pure quantum statistical physics evaluated via our custom **Attack Simulation Harness**:
 
-## ✨ Core Features
+1. **Eavesdropping (Quantum Channel Manipulation):** Detected via *State Fidelity Degradation*. An intercept-resend attack forces wave-function collapse. The framework calculates the state fidelity ($F$) of the recovered signature. If $F \le 66.7\%$, the channel is flagged as compromised.
+2. **Forgery:** Detected via *Asymmetric Mismatch Thresholds*. The framework replaces legacy symmetrization with a mathematical gap evaluated via Chernoff-Hoeffding bounds. We enforce $s_a < s_v < 0.5$ (where $s_a$ is authentication and $s_v$ is verification). Any forged signature mathematically exceeds this threshold gap.
+3. **Replay Attacks:** Detected via *No-Cloning State Collapse*. Teleportation strictly consumes the pre-shared Bell state. If classical transmission bits are replayed, Pauli corrections apply to vacuum noise, causing state fidelity to crash to exactly 50%.
+4. **Impersonation:** Detected via *Measurement Distribution Visualization*. The framework uses ETSI GS QKD 014 REST APIs with mutual TLS (mTLS). Unauthorized nodes attempting to bypass proxy authorization cause severe distribution shifts in the Pauli measurement outcomes, which are instantly visualized and rejected.
 
-### 1. Practical Quantum Routing (MDI Topology)
-Bypasses traditional key-sharing vulnerabilities using a **Measurement-Device-Independent (MDI)** or "Twin-Field" routing topology.
-- Neil and Nitin communicate via an untrusted central router (Mukesh).
-- Mukesh performs Bell-State Measurements (BSM). Even if compromised, Mukesh only observes high-dimensional quantum noise.
-- Aligns with India's indigenous C-DOT Q-AKSHAY network specifications.
+## 🏗️ Tech Stack
 
-### 2. OQRNG & BCGST Error Subspaces
-- **OQRNG:** Mathematically simulates an Optical Quantum Random Number Generator using the natural Poisson distribution of photon-arrival times.
-- **BCGST Theorem:** Encodes signatures into a 3-qubit logical error-detecting subspace. Any interception forces an irreversible error matrix, physically preventing forgery.
+* **Quantum Simulation Engine:** IBM Qiskit (using `qiskit-aer` for realistic depolarizing noise models)
+* **Statistical Physics Engine:** Python (NumPy, SciPy)
+* **Enterprise API Layer:** FastAPI (RESTful ETSI 014 compliance)
+* **Frontend Dashboard:** React.js / Tailwind CSS
 
-### 3. The Decoy-State Method (Deceptive Defense)
-Defends against sophisticated Photon Number Splitting (PNS) attacks:
-- **Channel Flooding:** Mixes actual signal states with randomly inserted "decoy states" (varying mean photon intensities).
-- **Statistical Trap:** Eavesdroppers (Eve) inevitably interact with decoys, altering photon number statistics.
-- **Verification:** The Bit Error Rate (BER) of decoy pulses instantly exposes eavesdroppers, aborting the protocol.
+## 📁 Repository Structure
 
-### 4. Zero-AI Threat Detection Matrix
-Detects all mandated cyber threats using pure, deterministic statistical physics:
-- **Eavesdropping:** Detected via Fidelity Degradation. Drops below 66.7% (2/3) fidelity trigger a compromise alert.
-- **Forgery:** Utilizes Asymmetric Mismatch Thresholds ($s_a < s_v < 0.5$) to mathematically reject forged signatures.
-- **Replay Attacks:** Teleportation consumes the Bell state. Replaying classical bits yields 50% fidelity (pure noise), flagging an immediate alert.
+SIH-DTPT-Framework/
+├── frontend/                  # React UI for signature execution & visualization
+├── backend/
 
-## 🛠 Implementation Stack
+│   ├── api/                   # FastAPI ETSI GS QKD 014 REST endpoints
+│   ├── quantum_engine/
 
-- **Core Engine:** `IBM Qiskit` (Python) for circuit simulation, Bell-state generation, and Pauli correction routing.
-- **Statistical Watchdog:** `NumPy` & `SciPy` for Decoy-State BER analysis, density matrix algebra, and calculating threshold bounds.
-- **API Layer:** `FastAPI` to simulate enterprise node requests and serve authenticated JSON payloads, making it enterprise-ready for Web3 and decentralized economies (compliant with ETSI GS QKD 014).
+│   │   ├── teleportation.py         # Bell-State generation & Pauli corrections
+│   │   ├── decoy_states.py          # Decoy & Signal state modulation
+│   │   └── distribution_visualizer.py # Plots Poisson distributions & threshold shifts
+│   ├── watchdog/
 
-## 🚀 Installation & Setup
+│   │   ├── attack_simulation_harness.py # Simulates Forgery, Replay, & PNS attacks
+│   │   ├── fidelity.py              # Enforces the F > 66.7% limit
+│   │   └── thresholds.py            # Enforces the bounds
+│   └── main.py
 
-Ensure you have Python 3.8+ installed. The following instructions will set up the environment on your Mac or Linux terminal:
+├── docs/
 
-```bash
-# 1. Clone the repository
-git clone https://github.com/your-username/dtpt-quantum-signatures.git
-cd dtpt-quantum-signatures
+│   ├── TRD.md                 # Technical Requirements Document
+│   └── DTPT_Architecture.png
 
-# 2. Create and activate a virtual environment
-python3 -m venv venv
-source venv/bin/activate
+└── README.md
 
-# 3. Install required dependencies
-pip install qiskit numpy scipy fastapi uvicorn
-```
+## 📊 The "Winning" Demo: Measurement Distribution Visualization
 
-## 💻 Usage (Local Simulation)
+Our primary demonstration features the **Measurement Distribution Visualizer**.
+When running the `attack_simulation_harness.py`, the frontend visualizes the Pauli measurement outcome distribution. Under normal operation, the mismatch rate remains safely below the $s_a$ limit. When the judge clicks "Execute Forgery Attack," the UI explicitly visualizes the measurement distribution curve shifting violently to the right, crossing the $s_v$ limit and triggering an immediate, mathematically proven protocol abort.
 
-To spin up the Fast API server simulating the enterprise nodes:
+## ⚙️ How to Run the Prototype
 
-```bash
+**1. Start the Quantum Backend:**
+bash
+cd backend
+pip install -r requirements.txt
 uvicorn main:app --reload
-```
-Once running, you can interact with the quantum routing APIs via `http://localhost:8000/docs`.
 
-## 👨‍💻 Author / Maintainer
-
-**CypherX**
-
+**2. Start the Visualization Frontend:**
+bash
+cd frontend
+npm install
+npm start
