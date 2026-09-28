@@ -1,5 +1,3 @@
-
-
 ## Dual-Threshold Projective Teleportation (DTPT) Framework
 
 The Dual-Threshold Projective Teleportation (DTPT) Framework is a deterministic, AI-free software architecture designed to secure teleportation-based Quantum Digital Signatures (QDS).
@@ -24,31 +22,28 @@ Our framework identifies the four mandated cyber threats using pure quantum stat
 * **Enterprise API Layer:** FastAPI (RESTful ETSI 014 compliance)
 * **Frontend Dashboard:** React.js / Tailwind CSS
 
-## 📁 Repository Structuretext
+## 📁 Repository Structure 
 
+```text
 SIH-DTPT-Framework/
 ├── frontend/                  # React UI for signature execution & visualization
-├── backend/
+├── backend/                   
 │   ├── api/                   # FastAPI ETSI GS QKD 014 REST endpoints
-│   ├── quantum_engine/
+│   ├── quantum_engine/        
 │   │   ├── teleportation.py         # Bell-State generation & Pauli corrections
 │   │   ├── decoy_states.py          # Decoy & Signal state modulation
 │   │   └── distribution_visualizer.py # Plots Poisson distributions & threshold shifts
-│   ├── watchdog/
+│   ├── watchdog/              
 │   │   ├── attack_simulation_harness.py # Simulates Forgery, Replay, & PNS attacks
 │   │   ├── fidelity.py              # Enforces the F > 66.7% limit
 │   │   └── thresholds.py            # Enforces the bounds
-│   └── main.py
-├── docs/
+│   └── main.py                
+├── docs/                      
 │   ├── TRD.md                 # Technical Requirements Document
-│   └── DTPT_Architecture.png
+│   └── DTPT_Architecture.png  
 └── README.md
-
 ```
-
-## 📊 The "Winning" Demo: Measurement Distribution Visualization
-Our primary demonstration features the **Measurement Distribution Visualizer**. 
-When running the `attack_simulation_harness.py`, the frontend visualizes the Pauli measurement outcome distribution. Under normal operation, the mismatch rate remains safely below the $s_a$ limit. When the judge clicks "Execute Forgery Attack," the UI explicitly visualizes the measurement distribution curve shifting violently to the right, crossing the $s_v$ limit and triggering an immediate, mathematically proven protocol abort.
+```
 
 ## ⚙️ How to Run the Prototype
 **1. Start the Quantum Backend:**
