@@ -227,7 +227,7 @@ export default function Dashboard() {
         {/* Header */}
         <header className="mb-8 flex flex-col gap-4 border-b border-quantum-700 pb-6 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="font-mono text-xs uppercase tracking-[0.3em] text-cyan-400">Cypher#X</p>
+            <p className="font-mono text-xs uppercase tracking-[0.3em] text-cyan-400">Cipher#X</p>
             <h1 className="mt-2 text-2xl font-bold text-white sm:text-3xl">Dual-Threshold Projective Teleportation</h1>
             <p className="mt-1 text-sm text-slate-400">
               Deterministic quantum-signature threat detection. Zero AI/ML. Every verdict is a fixed physical bound.
