@@ -22,7 +22,7 @@ Our framework identifies the four mandated cyber threats using pure quantum stat
 * **Enterprise API Layer:** FastAPI (RESTful ETSI GS QKD 014 compliance)
 * **Frontend Dashboard:** React.js (Vite), Tailwind CSS, Recharts
 
-## 📊 The "Winning" Demo: Measurement Distribution Visualization
+## Measurement Distribution Visualization
 
 Our primary demonstration features the **Measurement Distribution Visualizer**.
 
