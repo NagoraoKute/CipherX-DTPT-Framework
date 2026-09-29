@@ -1,0 +1,24 @@
+## OS Files
+.DS_Store
+Thumbs.db
+
+## Virtual Environments (Backend)
+venv/
+env/
+.venv/
+pycache/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+## Node Modules and Build Files (Frontend)
+node_modules/
+dist/
+build/
+.npm
+npm-debug.log
+
+## Environment Variables
+.env
+.env.local
+.env.*.local
