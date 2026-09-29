@@ -30,6 +30,19 @@
 * **Decision:** We wrapped the Qiskit engine in a FastAPI server utilizing the ETSI 014 standard and mutual TLS (mTLS).
 * **Rationale:** Rather than building a proprietary API, using European Telecommunications Standards Institute (ETSI) protocols proves the software is enterprise-ready and capable of integrating with existing global infrastructure.
 
+### ADR-005: Floating-Point Determinism in Quantum Thresholds
+* **Context:** When checking for a Replay Attack, the system expects a state fidelity of exactly 0.50. However, classical hardware simulating quantum depolarizing noise introduces standard IEEE 754 floating-point inaccuracies (e.g., 0.51 - 0.5 = 0.0100000000000000089).
+
+* **Decision:** We updated the threshold logic to use strict absolute tolerances: abs(F - 0.5) <= 0.01 + 1e-9.
+
+* **Rationale:** This ensures the Watchdog mathematically captures the boundaries of a Replay attack without being bypassed by classical CPU floating-point drift.
+
+### ADR-006: Frontend Build Tooling (Vite)
+* **Context:** Create React App (CRA) is deprecated and causes dependency conflicts with modern charting libraries like Recharts 3.x.
+
+* **Decision:** We migrated the frontend to Vite.
+
+* **Rationale:** Vite provides significantly faster Hot Module Replacement (HMR) and perfectly resolves the react-is peer dependency required to securely render the Measurement Distribution Visualizer during the live demo.
 ---
 
 ## 2. Known Risks & Fragile Codebase Areas

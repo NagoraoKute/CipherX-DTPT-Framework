@@ -137,7 +137,8 @@ def compute_state_fidelity(
 def classify_state_fidelity(value: float, token_count: int = 1) -> FidelityAssessment:
     """Apply the agreed rules without raising. Replay is checked BEFORE eavesdropping."""
     fidelity = validate_fidelity(value)
-    if np.isclose(fidelity, REPLAY_FIDELITY, rtol=0.0, atol=REPLAY_FIDELITY_TOLERANCE):
+    # Inclusive band 0.5 +/- 0.01. np.isclose alone rejects 0.51 (0.51 - 0.5 = 0.0100000000000000089).
+    if abs(fidelity - REPLAY_FIDELITY) <= REPLAY_FIDELITY_TOLERANCE + _NUMERICAL_SLACK:
         verdict = FidelityVerdict.REPLAY_ATTACK
     elif fidelity <= CLASSICAL_TELEPORTATION_LIMIT:
         verdict = FidelityVerdict.EAVESDROPPING
