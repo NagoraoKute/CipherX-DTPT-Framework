@@ -30,6 +30,7 @@ When running the `attack_simulation_harness.py`, the frontend visualizes the Pau
 
 ## ⚙️ How to Run the Prototype
 
+```
 1. Start the Quantum Backend:bash
 cd backend
 source venv/bin/activate
