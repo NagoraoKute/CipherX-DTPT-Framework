@@ -28,6 +28,7 @@ DTPT-Framework/
 │   ├── api/                   # FastAPI ETSI GS QKD 014 REST endpoints
 │   ├── quantum_engine/        # Qiskit teleportation & decoy states
 │   ├── watchdog/              # Mathematical threat detection & simulation harness
+|   ├── requirements.txt
 │   └── main.py                # FastAPI entry point
 ├── docs/                      
 │   ├── TRD.md                 # Technical Requirements Document
