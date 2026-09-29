@@ -1,4 +1,4 @@
-# Dual-Threshold Projective Teleportation (DTPT) Framework
+## Dual-Threshold Projective Teleportation (DTPT) Framework
 
 The Dual-Threshold Projective Teleportation (DTPT) Framework is a deterministic, AI-free software architecture designed to secure teleportation-based Quantum Digital Signatures (QDS). 
 
@@ -14,54 +14,66 @@ Our framework identifies the four mandated cyber threats using pure quantum stat
 3. **Replay Attacks:** Detected via *No-Cloning State Collapse*. Teleportation strictly consumes the pre-shared Bell state. If classical transmission bits are replayed, Pauli corrections apply to vacuum noise, causing state fidelity to crash to exactly 50%.
 4. **Photon Number Splitting (PNS):** Detected via *Decoy-State Verification*. Evaluates the single-photon yield lower bound (Y_1^L). If Y_1^L ≤ 0 or the decoy count falls outside the expected exact binomial interval, the protocol aborts.
 
-## 🏗️ Tech Stack
+## 🏗️️ Tech Stack
 * **Quantum Simulation Engine:** Python 3.10+, IBM Qiskit (using `qiskit-aer` for realistic depolarizing noise models)
 * **Statistical Physics Engine:** NumPy, SciPy
 * **Enterprise API Layer:** FastAPI (RESTful ETSI GS QKD 014 compliance)
 * **Frontend Dashboard:** React.js (Vite), Tailwind CSS, Recharts
+* **Deployment:** Docker & Docker Compose
 
 ## 📁 Repository Structure
 ```text
-DTPT-Framework/
+SIH-DTPT-Framework/
 ├── frontend/                  # React UI for signature execution & visualization
+│   └── Dockerfile             # Frontend container config
 ├── backend/                   
 │   ├── api/                   # FastAPI ETSI GS QKD 014 REST endpoints
 │   ├── quantum_engine/        # Qiskit teleportation & decoy states
 │   ├── watchdog/              # Mathematical threat detection & simulation harness
-|   ├── requirements.txt
+│   ├── Dockerfile             # Backend container config
 │   └── main.py                # FastAPI entry point
 ├── docs/                      
 │   ├── TRD.md                 # Technical Requirements Document
-|   ├── architecture.md
 │   └── forgery_attack_demo.png # Dashboard screenshot
 ├── memory-bank/               # AI context and progress tracking
-│   ├── progress.md            
+├── docker-compose.yml         # One-click deployment config
 └── README.md
-
 ```
 
 ## Measurement Distribution Visualization
+Our primary demonstration features the Measurement Distribution Visualizer.
 
-Our primary demonstration features the **Measurement Distribution Visualizer**.
-
-When running the `attack_simulation_harness.py`, the frontend visualizes the Pauli measurement outcome distribution. Under normal operation, the mismatch rate remains safely below the s_a limit. When the judge clicks "Execute Forgery Attack," the UI explicitly visualizes the measurement distribution curve shifting violently to the right, crossing the s_v limit and triggering an immediate, mathematically proven protocol abort.
+When running the attack_simulation_harness.py, the frontend visualizes the Pauli measurement outcome distribution. Under normal operation, the mismatch rate remains safely below the s_a limit. When the judge clicks "Execute Forgery Attack," the UI explicitly visualizes the measurement distribution curve shifting violently to the right, crossing the s_v limit and triggering an immediate, mathematically proven protocol abort.
 
 ## ⚙️ How to Run the Prototype
 
-**1. Start the Quantum Backend:**
+**Option 1: Docker (Recommended)**
+You can run the entire full-stack application (frontend and backend) with a single command. Ensure Docker Desktop is running on your machine:
 
-```bash
-cd backend
-source venv/bin/activate
-python -m uvicorn main:app --reload
-
+```Bash
+docker-compose up --build
 ```
 
-**2. Start the Visualization Frontend:**
+* The API will be available at http://localhost:8000
+* The Interactive Dashboard will be available at http://localhost:5173
 
-```bash
+**Option 2: Manual Setup**
+If you prefer to run the services manually without Docker:
+
+1. Start the Quantum Backend:
+
+```Bash
+cd backend
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python -m uvicorn main:app --reload
+```
+
+2. Start the Visualization Frontend:
+
+```Bash
 cd frontend
 npm ci
 npm run dev
-
 ```
