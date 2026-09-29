@@ -31,7 +31,10 @@ SIH-DTPT-Framework/
 │   └── main.py                # FastAPI entry point
 ├── docs/                      
 │   ├── TRD.md                 # Technical Requirements Document
+|   ├── architecture.md
 │   └── forgery_attack_demo.png # Dashboard screenshot
+├── memory-bank/               # AI context and progress tracking
+│   ├── progress.md            
 └── README.md
 
 ```
