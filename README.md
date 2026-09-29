@@ -22,7 +22,7 @@ Our framework identifies the four mandated cyber threats using pure quantum stat
 
 ## 📁 Repository Structure
 ```text
-SIH-DTPT-Framework/
+DTPT-Framework/
 ├── frontend/                  # React UI for signature execution & visualization
 ├── backend/                   
 │   ├── api/                   # FastAPI ETSI GS QKD 014 REST endpoints
