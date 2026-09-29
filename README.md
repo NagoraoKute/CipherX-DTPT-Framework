@@ -58,7 +58,7 @@ docker-compose up --build
 * The Interactive Dashboard will be available at http://localhost:5173
 
 **Option 2: Manual Setup**
-If you prefer to run the services manually without Docker:
+* If you prefer to run the services manually without Docker:
 
 1. Start the Quantum Backend:
 
