@@ -1,13 +1,12 @@
 # Dual-Threshold Projective Teleportation (DTPT) Framework
 
-The Dual-Threshold Projective Teleportation (DTPT) Framework is a deterministic, AI-free software architecture designed to secure teleportation-based Quantum Digital Signatures (QDS).
+The Dual-Threshold Projective Teleportation (DTPT) Framework is a deterministic, AI-free software architecture designed to secure teleportation-based Quantum Digital Signatures (QDS). 
 
 Moving beyond classical cryptographic assumptions, this framework relies entirely on **Information-Theoretic Security (ITS)** guaranteed by the laws of quantum mechanics. We explicitly avoid the use of Artificial Intelligence or Machine Learning. Instead, our detection layer utilizes **Gottesman-Chuang (GC) style QDS modeling**, Pauli eigenstates, projective measurements, and rigorous statistical analysis of measurement outcomes to detect threats.
 
 To protect against Photon Number Splitting (PNS) attacks inherent in real-world telecommunications, the framework integrates the **Decoy-State Method**, utilizing simulated Optical Quantum Random Number Generator (OQRNG) seeds to mix signal and decoy states.
 
 ## 🧠 The Threat Detection Matrix (Zero AI)
-
 Our framework identifies the four mandated cyber threats using pure quantum statistical physics evaluated via our custom **Attack Simulation Harness**:
 
 1. **Eavesdropping (Quantum Channel Manipulation):** Detected via *State Fidelity Degradation*. An intercept-resend attack forces wave-function collapse. The framework calculates the state fidelity (F) of the recovered signature. If F ≤ 66.7%, the channel is flagged as compromised.
@@ -16,11 +15,26 @@ Our framework identifies the four mandated cyber threats using pure quantum stat
 4. **Photon Number Splitting (PNS):** Detected via *Decoy-State Verification*. Evaluates the single-photon yield lower bound (Y_1^L). If Y_1^L ≤ 0 or the decoy count falls outside the expected exact binomial interval, the protocol aborts.
 
 ## 🏗️ Tech Stack
-
 * **Quantum Simulation Engine:** Python 3.10+, IBM Qiskit (using `qiskit-aer` for realistic depolarizing noise models)
 * **Statistical Physics Engine:** NumPy, SciPy
 * **Enterprise API Layer:** FastAPI (RESTful ETSI GS QKD 014 compliance)
 * **Frontend Dashboard:** React.js (Vite), Tailwind CSS, Recharts
+
+## 📁 Repository Structure
+```text
+SIH-DTPT-Framework/
+├── frontend/                  # React UI for signature execution & visualization
+├── backend/                   
+│   ├── api/                   # FastAPI ETSI GS QKD 014 REST endpoints
+│   ├── quantum_engine/        # Qiskit teleportation & decoy states
+│   ├── watchdog/              # Mathematical threat detection & simulation harness
+│   └── main.py                # FastAPI entry point
+├── docs/                      
+│   ├── TRD.md                 # Technical Requirements Document
+│   └── forgery_attack_demo.png # Dashboard screenshot
+└── README.md
+
+```
 
 ## Measurement Distribution Visualization
 
@@ -30,9 +44,9 @@ When running the `attack_simulation_harness.py`, the frontend visualizes the Pau
 
 ## ⚙️ How to Run the Prototype
 
-**1. Start the Quantum Backend:bash**
+**1. Start the Quantum Backend:**
 
-```
+```bash
 cd backend
 source venv/bin/activate
 python -m uvicorn main:app --reload
@@ -40,10 +54,10 @@ python -m uvicorn main:app --reload
 ```
 
 **2. Start the Visualization Frontend:**
+
 ```bash
 cd frontend
 npm ci
 npm run dev
 
 ```
-
