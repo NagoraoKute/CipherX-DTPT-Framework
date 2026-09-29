@@ -48,7 +48,7 @@ When running the attack_simulation_harness.py, the frontend visualizes the Pauli
 ## ⚙️ How to Run the Prototype
 
 **Option 1: Docker (Recommended)**
-You can run the entire full-stack application (frontend and backend) with a single command. Ensure Docker Desktop is running on your machine:
+* You can run the entire full-stack application (frontend and backend) with a single command. Ensure Docker Desktop is running on your machine:
 
 ```Bash
 docker-compose up --build
