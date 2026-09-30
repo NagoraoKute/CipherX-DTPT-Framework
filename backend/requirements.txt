@@ -1,20 +1,9 @@
-Web Framework & Server
-
 fastapi>=0.100.0
 uvicorn[standard]>=0.23.0
 pydantic>=2.0.0
-
-Quantum Simulation Engine
-
 qiskit>=1.0.0
 qiskit-aer>=0.14.0
-
-Statistical Physics & Math (Zero AI/ML)
-
 numpy>=1.24.0
 scipy>=1.10.0
-
-Testing Suite
-
 pytest>=7.0.0
 httpx>=0.24.0
