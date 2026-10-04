@@ -1,131 +1,106 @@
-# Testing Strategy: DTPT Framework
+# Testing — DTPT Framework
 
-**Version:** 1.0
+**Current results:** 115 backend tests and 10 frontend tests, all passing. A 2,000-session validation campaign has also been run (§4).
 
-**Context:** This document outlines the critical-path test coverage and execution instructions for the Dual-Threshold Projective Teleportation (DTPT) Framework. Tests are designed to verify deterministic quantum mechanics and statistical mathematics. **No AI/ML testing libraries are permitted.**
-
-## 1. Testing Philosophy & Critical Paths
-
-Because this framework guarantees Information-Theoretic Security (ITS), testing focuses on proving the mathematical boundaries:
-
-1. **Quantum State Integrity:** Verifying IBM Qiskit correctly constructs the Bell-State Measurement (BSM) and Pauli corrections.
-2. **Watchdog Determinism:** Proving the framework strictly enforces the $F \le 0.6667$ (eavesdropping) and $s_a < s_v < 0.5$ (forgery) limits without false negatives.
-3. **API Security:** Ensuring compromised keys are permanently blocked (HTTP 403) from external classical systems.
-
-## 2. Test Execution
-
-**Backend (Python/FastAPI/Qiskit)**
-We use `pytest` for all backend unit and integration testing.
-
-```bash
-cd backend
-pip install pytest httpx
-pytest tests/ -v
-
-```
-
-**Frontend (React)**
-We use `Jest` and `@testing-library/react`.
-
-```bash
-cd frontend
-npm run test
-
-```
+Tests check the mathematical boundaries directly: each Watchdog rule is exercised at, just below and just above its threshold, and checked end to end through the Qiskit engine. No AI/ML testing tools are used.
 
 ---
 
-## 3. Phase-by-Phase Testing Guide
+## 1. Running the tests
 
-### Phase 1: Environment & Initialization
+```bash
+# Backend: run from backend/ (pytest.ini sets pythonpath and testpaths)
+pip install -r requirements.txt pytest httpx
+pytest -v
 
-**Goal:** Verify basic communication and environment health.
+# Frontend
+cd frontend
+npm ci
+npm test            # vitest run
+```
 
-* **Test 1.1 (Backend):** `test_health_check.py`
-* *Action:* Send `GET /health` to FastAPI.
-* *Assertion:* Expect `200 OK` and `{"status": "online"}`.
+`backend/pytest.ini` puts `backend/` first on `sys.path`. Without it, the PyPI package `watchdog` can shadow our `watchdog/` package (decision_log ADR-012).
 
+## 2. Backend suites (implemented)
 
-* **Test 1.2 (Frontend):** `App.test.js`
-* *Action:* Render the main Dashboard component.
-* *Assertion:* Expect the "Sign Document" button to be in the DOM.
+### 2.1 `tests/test_fidelity.py` — replay and intercept-resend (62 cases)
 
+| Area | What is proven |
+|---|---|
+| Intercept-resend | F = 0.65 aborts. Every F ≤ 0.6667 outside the replay band aborts, including exactly 2/3. The limit is inclusive: the next float above 0.6667 passes. |
+| Replay | F = 0.5 aborts. The whole band [0.49, 0.51] is replay, endpoints included (the regression test for ADR-009). |
+| Rule order | 0.5 is labelled replay, not eavesdropping. Values just outside the band fall through to eavesdropping. |
+| Qiskit physics | A replayed correction on I/2 gives F = 0.5 for all 24 combinations of token and broadcast. Noiseless intercept-resend averages exactly 2/3 for every token. |
+| Batch evaluation | A batch of intercepted tokens is labelled eavesdropping even though individual tokens show 0.5. A batch of replayed tokens is labelled replay. |
+| Input validation | NaN, ±inf, values below 0 or above 1, and empty batches are rejected. Float rounding just above 1 is clamped. |
 
+### 2.2 `tests/test_thresholds.py` — forgery (53 cases)
 
-### Phase 2: Quantum Engine
+| Area | What is proven |
+|---|---|
+| Forgery rule | With s_a = 0.05, s_v = 0.08 and m = 0.07, the session aborts with the `VERIFIED_ONLY` tier. Every count ≥ ⌈s_a·L⌉ aborts. |
+| Exact boundaries | 0.05 × 100 gives a count limit of 5, not 6. The verdict never drops back to a lower tier as the mismatch count rises, checked across all 4,097 possible counts. |
+| Configuration | Every violation of 0 ≤ e_h < s_a < s_v < e_f ≤ 0.5 is rejected, as are NaN thresholds and L = 0. A channel noisier than the forger floor is refused. |
+| Bounds | The exact binomial tail never exceeds the Hoeffding bound. Bounds shrink as L grows. `minimum_key_length(ε)` satisfies all three bounds for ε = 10⁻³, 10⁻⁶ and 10⁻⁹. |
+| Visualizer data | Each distribution curve sums to 1 and has the expected mean. |
+| End to end (Qiskit) | 10 honest sessions are all authenticated. 10 blind forgeries all exceed s_v and are rejected. A forgery leaves the channel fidelity unchanged, so it is labelled as forgery rather than eavesdropping. |
 
-**Goal:** Verify Qiskit circuits and OQRNG physical entropy logic.
+## 3. Frontend suites (implemented)
 
-* **Test 2.1 (OQRNG Generator):** `test_oqrng.py`
-* *Action:* Generate an array of 1,000 basis selections.
-* *Assertion:* Ensure the output strictly follows `numpy.random.poisson` distribution limits, not a uniform pseudo-random distribution.
+| File | Tests | What is proven |
+|---|---|---|
+| `src/api.test.js` | 5 | The interceptor sends Alice's fingerprint to `enc_keys` and `status`, Bob's to `dec_keys`, and no header to `/simulate` or `/health`. A 403 from `dec_keys` resolves instead of throwing. Per-call overrides work. |
+| `src/components/Visualizer.test.jsx` | 3 | Both threshold `ReferenceLine`s and both curves render as SVG. A forged curve has more than 99% of its probability mass beyond s_v. A placeholder shows when there is no data. |
+| `src/components/Dashboard.test.jsx` | 2 | "Sign Document" renders. Clicking "Execute Forgery" sends `FORGERY` and displays `HTTP 403 Forbidden · ABORT_FORGERY`. |
 
+## 4. Validation campaign (statistical)
 
-* **Test 2.2 (Bell-State Creation):** `test_teleportation.py`
-* *Action:* Run the CNOT and Hadamard gate sequence in Qiskit `StatevectorSimulator`.
-* *Assertion:* Verify the output density matrix represents a perfect $\vert{}\Phi^+\rangle$ entangled state before noise is applied.
+Settings: L = 4096, depolarizing p = 0.02, 100 km fiber, 10⁶ decoy pulses, 400 sessions per scenario.
 
+| Scenario | Correct verdict |
+|---|---|
+| Honest | 400 / 400 `VERIFIED` (0 false aborts) |
+| Forgery | 400 / 400 `ABORT_FORGERY` |
+| Replay | 400 / 400 `ABORT_REPLAY` |
+| Intercept-resend | 399 / 400 `ABORT_EAVESDROP` (1 aborted as `ABORT_FORGERY`) |
+| PNS | 400 / 400 `ABORT_EAVESDROP` (`PNS`) |
 
-* **Test 2.3 (Pauli Corrections):** `test_teleportation.py`
-* *Action:* Mock the 4 possible classical 2-bit broadcasts (00, 01, 10, 11).
-* *Assertion:* Verify Bob's logic perfectly applies $I$, $\sigma_x$, $\sigma_z$, and $\sigma_z\sigma_x$ respectively.
+How to read these numbers:
 
+- **Statistical strength.** Zero failures in 400 runs puts a 95% upper bound of about 0.75% on that failure rate (the "rule of three"). Stronger guarantees come from the analytic bounds, not from run counts. For example, the exact probability of accepting a cloning-level forger is about 1.5 × 10⁻¹⁶ at L = 4096.
+- **What Qiskit actually runs.** Qiskit Aer computes the 28 distinct density matrices once (ADR-006). Each session then samples measurement outcomes from those states.
+- **Reproducibility.** This campaign was run ad hoc. A reproducible script is still to be written (§6).
+- **Earlier run that informed ADR-011.** A sweep at L = 1024 mislabelled 30 of 400 intercept-resend sessions.
 
+## 5. Tested versions
 
-### Phase 3: Statistical Watchdog (CRITICAL PATH)
+Backend:
 
-**Goal:** Verify the deterministic math boundaries. These tests prove to the judges that the system works without AI.
+| Package | Version |
+|---|---|
+| Python | 3.12.3 |
+| numpy | 2.4.4 |
+| scipy | 1.17.1 |
+| qiskit | 2.5.2 |
+| qiskit-aer | 0.17.2 |
+| fastapi | 0.141.1 |
+| pydantic | 2.13.5 |
+| uvicorn | 0.54.0 |
+| httpx | 0.28.1 |
+| pytest | 9.1.1 |
 
-* **Test 3.1 (Eavesdropping / Intercept-Resend):** `test_fidelity.py`
-* *Action:* Mock a state fidelity score of `0.65`.
-* *Assertion:* Expect `EavesdroppingException` to be raised (since $0.65 \le 0.6667$).
+Frontend: exact pins in `frontend/package.json`, plus `package-lock.json`.
 
+## 6. Not yet implemented
 
-* **Test 3.2 (Replay Attack):** `test_fidelity.py`
-* *Action:* Mock a state fidelity score of `0.5000` (measuring unentangled vacuum noise).
-* *Assertion:* Expect `ReplayAttackException` to be raised.
+| Planned file | Purpose |
+|---|---|
+| `tests/test_health_check.py` | `GET /health` returns `{"status": "online"}` |
+| `tests/test_oqrng.py` | Raw stream has variance/mean ≈ 1 (Poisson). Extracted bits and token choices are uniform. |
+| `tests/test_teleportation.py` | Bell-pair fidelity is 1. All 6 tokens × 4 broadcasts teleport with fidelity 1. The mid-circuit version produces 0 mismatches without noise. |
+| `tests/test_decoy_stats.py` | An honest channel passes. PNS raises `PNSAttackException`, through both the Y₁ᴸ rule and the interval rule. |
+| `tests/test_etsi_routes.py` | Full flow `enc_keys` → `dec_keys` returns 200 with a key. An aborted session returns 403 `{"error": …}` with no key. A wrong master or unknown `key_ID` returns 404. |
+| `tests/test_security.py` | Missing or unknown fingerprint → 401. Wrong role → 403. |
+| `validation/run_campaign.py` | Reproducible version of §4, writing a CSV and a summary table. |
 
-
-* **Test 3.3 (Forgery / Mismatch Bounds):** `test_thresholds.py`
-* *Action:* Set $s_a = 0.05$ and $s_v = 0.08$. Mock a signature mismatch rate of `0.07`.
-* *Assertion:* Expect `ForgeryException` to be raised (since $0.07 > s_a$).
-
-
-* **Test 3.4 (PNS Attack / Decoys):** `test_decoy_stats.py`
-* *Action:* Inject statistical variance into the mocked decoy-state Bit Error Rate (BER).
-* *Assertion:* Expect `PNSAttackException` to be raised when variance exceeds the physical fiber-optic baseline.
-
-
-
-### Phase 4: API & Enterprise Integration
-
-**Goal:** Verify ETSI GS QKD 014 compliance and security blocking.
-
-* **Test 4.1 (Authorized Key Delivery):** `test_etsi_routes.py`
-* *Action:* Mock a successful Watchdog pass (Fidelity = 0.99, Mismatch = 0.01). Request `GET /api/v1/keys/{sae_id}/dec_keys`.
-* *Assertion:* Expect `200 OK` and a valid JSON signature payload.
-
-
-* **Test 4.2 (Threat Blocking):** `test_etsi_routes.py`
-* *Action:* Mock a failed Watchdog check (Fidelity = 0.60). Request the same key retrieval endpoint.
-* *Assertion:* Expect `403 Forbidden` with payload `{"error": "ABORT_EAVESDROP"}`. *Crucial: The compromised key must never be returned.*
-
-
-* **Test 4.3 (Node Impersonation):** `test_security.py`
-* *Action:* Send a request with a mocked `tls_cert_hash` that is not in the `NodeRegistry`.
-* *Assertion:* Expect `401 Unauthorized` / connection dropped.
-
-
-
-### Phase 5: Frontend Interaction
-
-**Goal:** Verify the UI triggers the correct backend simulations and dynamically updates.
-
-* **Test 5.1 (Attack Simulation Harness UI):** `Dashboard.test.js`
-* *Action:* Click the "Execute Forgery Attack" button.
-* *Assertion:* Verify an Axios `POST /api/v1/simulate/attack` request is dispatched with `{ "attack_type": "FORGERY" }`.
-
-
-* **Test 5.2 (Measurement Distribution Visualizer):** `Visualizer.test.js`
-* *Action:* Pass a mocked array of high-mismatch values (simulating a forgery) into the Recharts component.
-* *Assertion:* Verify the charted curve renders past the static `<ReferenceLine x={s_v} />` SVG element.
+Each roadmap item (R1–R4 in architecture.md §9) also needs its own tests when it is implemented.

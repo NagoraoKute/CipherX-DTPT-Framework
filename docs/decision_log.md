@@ -1,74 +1,143 @@
-# Decision Log & Known Risks: DTPT Framework
+# Decision Log and Known Risks — DTPT Framework
 
-**Version:** 1.0
+This file records the architectural decisions behind the prototype, including corrections to earlier claims. Each entry states what was decided, why, and what it costs.
 
-**Context:** This document records the architectural decisions made during the development of the Dual-Threshold Projective Teleportation (DTPT) Framework. It also logs known risks, fragile components, and limitations of simulating quantum mechanics on classical hardware.
+| ADR | Decision | Status |
+|---|---|---|
+| 001 | No AI/ML in threat detection | Active |
+| 002 | Teleportation with outsourced BSM (corrects an earlier "MDI / twin-field" label) | Active (corrected) |
+| 003 | Decoy-state method as a photon-level NumPy model | Active |
+| 004 | ETSI GS QKD 014-style REST API, with two documented deviations | Active |
+| 005 | Simulated OQRNG: Poisson source, unbiased extractor, seeded bulk generator | Active |
+| 006 | Cached deferred-measurement density matrices | Active |
+| 007 | Single-qubit tokens; BCGST encoding not implemented | Active (accepted limitation) |
+| 008 | Batch-mean fidelity, replay checked first | Active |
+| 009 | Inclusive replay band (floating-point fix) | Active |
+| 010 | Mock mTLS via forwarded-fingerprint header | Active (demo only) |
+| 011 | Key length L = 4096 | Active (supersedes the earlier 1,024 cap) |
+| 012 | Package layout to avoid the `watchdog` name collision | Active |
+| 013 | Threshold calibration: thirds split, cloning floor, exact tails | Active |
+| 014 | PNS detection rules | Active |
+| 015 | Frontend toolchain: Vite, Tailwind 3.4, Recharts 3, pinned versions | Active |
 
-## 1. Architectural Decision Record (ADR)
-
-### ADR-001: Strict Rejection of AI/ML for Threat Detection
-
-* **Context:** Modern cybersecurity heavily relies on Machine Learning (e.g., neural networks, random forests) for anomaly detection.
-* **Decision:** We explicitly banned all AI/ML libraries from the codebase. Threat detection is handled $100\%$ by deterministic statistical algebra.
-* **Rationale:** AI is probabilistic and heuristic; it guesses based on historical data. Quantum digital signatures guarantee Information-Theoretic Security (ITS), which relies on absolute physical laws. Introducing AI weakens the security proof. We opted for Chernoff-Hoeffding bounds and Fidelity State ($F \le 0.6667$) calculations to maintain mathematical certainty.
-
-### ADR-002: Measurement-Device-Independent (MDI) / Twin-Field Topology
-
-* **Context:** Standard teleportation requires Alice and Bob to share entangled pairs directly, which exposes endpoints to side-channel detector attacks.
-* **Decision:** We implemented a 3-node architecture where Alice and Bob route through an untrusted central node (Charlie) who performs the Bell-State Measurement.
-* **Rationale:** This eliminates the need for Alice and Bob to securely share a key prior to the signature, solving the key-distribution bottleneck. It also perfectly aligns with the Indian Government's C-DOT Q-AKSHAY MD network standards, making our software ready for sovereign deployment.
-
-### ADR-003: Integrating the Decoy-State Method
-
-* **Context:** Real-world telecom lasers emit "weak coherent pulses" that sometimes accidentally contain 2 or 3 photons. Attackers can exploit this via Photon Number Splitting (PNS) without dropping state fidelity.
-* **Decision:** We added a decoy-state generator module that modulates the intensity of transmitted pulses (mixing signal, weak decoy, and vacuum states).
-* **Rationale:** Simulating perfect single-photon guns is unrealistic. By adding decoy states, we trap the attacker and evaluate Yield/BER to detect PNS attacks, proving our framework is ready for physical fiber-optic deployments.
-
-### ADR-004: Using ETSI GS QKD 014 REST APIs
-
-* **Context:** The quantum engine needs to communicate with classical web applications (like a React frontend or a Web3 smart contract).
-* **Decision:** We wrapped the Qiskit engine in a FastAPI server utilizing the ETSI 014 standard and mutual TLS (mTLS).
-* **Rationale:** Rather than building a proprietary API, using European Telecommunications Standards Institute (ETSI) protocols proves the software is enterprise-ready and capable of integrating with existing global infrastructure.
-
-### ADR-005: Floating-Point Determinism in Quantum Thresholds
-* **Context:** When checking for a Replay Attack, the system expects a state fidelity of exactly 0.50. However, classical hardware simulating quantum depolarizing noise introduces standard IEEE 754 floating-point inaccuracies (e.g., 0.51 - 0.5 = 0.0100000000000000089).
-
-* **Decision:** We updated the threshold logic to use strict absolute tolerances: abs(F - 0.5) <= 0.01 + 1e-9.
-
-* **Rationale:** This ensures the Watchdog mathematically captures the boundaries of a Replay attack without being bypassed by classical CPU floating-point drift.
-
-### ADR-006: Frontend Build Tooling (Vite)
-* **Context:** Create React App (CRA) is deprecated and causes dependency conflicts with modern charting libraries like Recharts 3.x.
-
-* **Decision:** We migrated the frontend to Vite.
-
-* **Rationale:** Vite provides significantly faster Hot Module Replacement (HMR) and perfectly resolves the react-is peer dependency required to securely render the Measurement Distribution Visualizer during the live demo.
 ---
 
-## 2. Known Risks & Fragile Codebase Areas
+## ADR-001: No AI/ML in threat detection
 
-While the theoretical math is bulletproof, simulating continuous physical phenomena using discrete classical code introduces certain fragilities.
+- **Decision.** Threat detection uses only fixed comparisons against physical and statistical bounds. No machine-learning library is imported anywhere in the codebase.
+- **Rationale.** The problem statement asks for detection without AI/ML. Fixed bounds are also auditable: every verdict can be traced to one inequality and recomputed by hand.
+- **Cost.** The bounds are only as good as the threat model behind them. An attack outside that model (for example, a detector side channel) is not covered. That is a property of any fixed-bound design, and THREAT_MODEL.md lists what is out of scope.
 
-### Risk 1: Simulating Decoy-States in Discrete Qiskit (Fragile Abstraction)
+## ADR-002: Teleportation with outsourced Bell-state measurement (corrected)
 
-* **The Risk:** The Decoy-State method relies on continuous optical variables (mean photon intensity levels). IBM Qiskit is a discrete-variable simulator (it works in binary qubits: 0s and 1s).
-* **Current Workaround:** In `decoy_states.py`, we approximate intensity modulation by randomly assigning classical array weights to simulate Yield and BER variances.
-* **Impact:** This is a software abstraction of a hardware reality. While the statistical watchdog handles the math correctly, the Qiskit circuit itself is not physically firing multi-photon pulses. 
+- **Decision.** Alice holds the token and one half of a Bell pair shared with Bob. Charlie, an untrusted relay, performs the Bell-state measurement on Alice's two qubits and broadcasts 2 bits. Bob applies the Pauli correction.
+- **Correction.** Earlier project documents described this as a measurement-device-independent (MDI) or twin-field topology. That label was wrong. In MDI schemes the relay measures signals arriving from *both* parties, which removes detector side channels at the endpoints. Our relay measures two qubits that both originate with Alice. We also removed an unverified claim of alignment with a specific national network standard.
+- **Cost.** The design does not inherit MDI's immunity to detector attacks. Moving to a genuine MDI-QDS layout is future work.
 
-### Risk 2: Hardcoded Depolarizing Noise Thresholds (False Positives)
+## ADR-003: Decoy-state method as a photon-level NumPy model
 
-* **The Risk:** To make the simulation realistic, `qiskit-aer` injects depolarizing noise (simulating fiber-optic signal loss). If the noise parameter in `hardware_params.yaml` is set too high, the natural error rate will exceed the authentication threshold ($s_a$).
-* **Impact:** This will cause a **False Positive Forgery Abort**. The system will think Bob is forging the signature, but in reality, the simulated cable is just too noisy.
-* **Mitigation:** The values for $s_a$ and $s_v$ must be tightly calibrated to the simulated fiber distance (e.g., 100km at 1550nm wavelength). Changing the noise parameters without recalculating the Chernoff bounds will break the demonstration.
+- **Decision.** Alice randomly sends signal (μ = 0.5), weak decoy (ν = 0.1) and vacuum pulses with probabilities 0.7, 0.2 and 0.1. Photon numbers are Poisson-distributed, losses are binomial, and dark counts and misalignment are included. Bob isolates the decoy pulses and computes per-class gain and QBER, plus the Ma-Qi-Zhao-Lo single-photon yield lower bound Y₁ᴸ.
+- **Rationale.** Qiskit simulates qubits, not multi-photon optical pulses. PNS attacks only exist at the photon-number level, so that layer is modelled with exact photon statistics in NumPy.
+- **Cost.** The decoy channel and the qubit teleportation run as two parallel models of the same fiber, not one unified simulation (roadmap R6).
 
-### Risk 3: Classical Simulation Bottleneck (UI Latency)
+## ADR-004: ETSI GS QKD 014-style REST API
 
-* **The Risk:** Running complex density matrix algebra and Qiskit `StatevectorSimulator` for large key lengths is extremely CPU-intensive on a standard laptop.
-* **Impact:** When someone clicks "Execute Forgery Attack" on the React dashboard, the FastAPI backend might take 3 to 5 seconds to calculate the fidelity and mismatch arrays before responding.
-* **Mitigation:** For the live hackathon demo, we cap the simulated key length ($L$) to a smaller, manageable array size (e.g., 1,024 bits instead of 100,000 bits) to ensure the Recharts visualization updates snappily during the presentation.
-* **Resolved:** Optimized Qiskit state caching allows key lengths of $L=4096$ to execute in 0.11s, improving the exact binomial forgery bound to $1.5 \times 10^{-16}$ without UI latency.
+- **Decision.** The API exposes `status`, `enc_keys` and `dec_keys` with ETSI-shaped request and response bodies, and returns HTTP 403 with `{"error": "ABORT_…"}` on any Watchdog abort.
+- **Deviations from the standard.**
+  1. `enc_keys` returns a `key_ID` with status `PENDING` and withholds the key. Only `dec_keys` releases it, after the Watchdog passes.
+  2. DTPT telemetry travels in the standard's extension fields.
+- **Rationale.** Using a recognised key-delivery interface shows how the framework would plug into existing infrastructure, and avoids inventing a proprietary API.
 
-### Risk 4: Qiskit Version Deprecations
+## ADR-005: Simulated OQRNG
 
-* **The Risk:** IBM rapidly updates Qiskit. Deprecations in how `QuantumCircuit.measure()` or `qiskit.quantum_info.state_fidelity` operate can break the backend.
-* **Mitigation:** The `requirements.txt` strictly pins the Qiskit version used during the hackathon development phase. Do not run `pip install --upgrade` right before the presentation.
+- **Decision.** Raw entropy comes from Poisson-distributed photon counts (`numpy.random.Generator.poisson`, λ = 10).
+  - Raw counts taken mod 6 would be biased. Bits are therefore extracted by comparing pairs of independent counts (a < b → 0, a > b → 1, ties discarded). This is exactly unbiased for i.i.d. samples.
+  - Uniform choices among the six Pauli eigenstates then use exact rejection sampling on those bits.
+  - Bulk decoy modulation (10⁶ pulses) uses a PCG64 generator seeded with 256 OQRNG bits. Drawing every pulse through the extractor took 5.9 s per session; the seeded generator takes 0.14 s.
+- **Honest scope.** This is a *simulation* of an optical QRNG. NumPy's generator is pseudo-random, so the entropy is not physical. Pauli basis selection always uses the extractor directly; only decoy-class assignment uses the seeded generator.
+
+## ADR-006: Cached deferred-measurement density matrices
+
+- **Decision.** Bob's received state depends only on the token, the attack branch and the noise parameters. Those 28 circuits (6 honest, 18 intercept-resend, 4 replay) run once in Qiskit Aer's density-matrix mode and are cached. Per-token measurement outcomes are then sampled with the Born rule.
+  - Charlie's mid-circuit measurement is replaced by quantum-controlled corrections (the principle of deferred measurement). This gives Bob exactly the same reduced state, without sampling noise.
+  - The mid-circuit (`if_test`) version is kept in `teleportation.py` for reference and testing.
+- **Rationale.** Running one circuit per token would be far too slow for a live demo. With caching, a full session takes about 0.11 s.
+- **Cost.** The Watchdog currently reads the fidelity from the simulated density matrix, which a real receiver cannot observe (roadmap R2).
+
+## ADR-007: Single-qubit tokens; BCGST encoding not implemented
+
+- **Decision.** Tokens are teleported as single qubits.
+- **Rationale.** The Barnum-Crépeau-Gottesman-Smith-Tapp (BCGST) result implies that authenticating quantum states requires encoding them. A multi-qubit error-detecting code would multiply simulation cost and was deferred.
+- **Cost.** The prototype does not satisfy that requirement. This is a stated limitation, not a solved problem.
+
+## ADR-008: Batch-mean fidelity, replay checked first
+
+- **Decision.** Fidelity rules are applied to the mean fidelity over all L tokens. Replay (\|F̄ − 0.5\| ≤ 0.01) is checked before intercept-resend (F̄ ≤ 0.6667).
+- **Rationale.**
+  - The 2/3 limit is an average. An intercepted token where Eve chose the wrong basis has F = 0.5 on its own, so a per-token check would mislabel intercept-resend as replay.
+  - F = 0.5 also satisfies F ≤ 0.6667, so the order of the checks is what separates the two attacks.
+- **Earlier version.** The original documents specified `F == 0.5` as an exact equality. That is replaced by a tolerance band, because channel noise makes exact equality unreachable.
+
+## ADR-009: Inclusive replay band (bug found by tests)
+
+- **Decision.** The replay check is `abs(F − 0.5) <= 0.01 + 1e-9`.
+- **Rationale.** The first implementation used `np.isclose(F, 0.5, atol=0.01)`, which rejects F = 0.51 because 0.51 − 0.5 = 0.0100000000000000089 in floating point. `tests/test_fidelity.py` caught it. The 1e-9 slack only absorbs floating-point rounding.
+
+## ADR-010: Mock mTLS via forwarded-fingerprint header
+
+- **Decision.** ETSI routes read `X-SSL-Client-Cert-SHA256` and look the value up in an in-code node registry.
+  - An unknown or missing fingerprint gets 401.
+  - A known node calling an endpoint its role does not allow gets 403.
+  - The frontend attaches Alice's fingerprint for `enc_keys` and `status`, and Bob's for `dec_keys`, using an Axios interceptor.
+- **Honest scope.** This simulates what a TLS-terminating proxy would forward after verifying a real client certificate. The demo fingerprints are compiled into the public frontend bundle, so anyone can reuse them. It is not mTLS and gives no real authentication.
+
+## ADR-011: Key length L = 4096
+
+- **Decision.** The default number of tokens per signature is 4096. This supersedes the earlier plan to cap L at 1,024 for latency.
+- **Rationale.** A 400-session sweep at L = 1024 labelled 7.5% of intercept-resend runs as `ABORT_FORGERY`. They were still aborted, but under the wrong label, because random variation in Eve's basis choices left batch fidelity just above 0.6667.
+  - At L = 4096 the mislabel rate fell to 1 in 400.
+  - The exact bound on accepting a forgery fell from about 2 × 10⁻⁵ to about 1.5 × 10⁻¹⁶.
+  - Latency was unchanged at 0.11 s, thanks to ADR-006.
+
+## ADR-012: Package layout to avoid the `watchdog` name collision
+
+- **Decision.** `quantum_engine/`, `watchdog/` and `api/` are regular packages (they contain `__init__.py`), and `pytest.ini` sets `pythonpath = .`.
+- **Rationale.** A popular PyPI package is also called `watchdog`, and it is often installed alongside uvicorn's reload tooling. Without these two measures, `import watchdog` silently resolves to that package instead of ours.
+
+## ADR-013: Threshold calibration
+
+- **Decision.** Thresholds are derived from two error rates:
+  - **Honest error rate:** e_h = 1 − min F over the six tokens. For a pure token, the probability of a mismatch is exactly 1 − F.
+  - **Forger floor:** e_f = 1/6, from the 5/6 fidelity limit of an optimal universal 1→2 qubit cloner.
+  - **Thresholds:** split the gap in thirds, so s_a = e_h + (e_f − e_h)/3 and s_v = e_h + 2(e_f − e_h)/3.
+  - The code enforces 0 ≤ e_h < s_a < s_v < e_f ≤ 0.5.
+  - Decisions compare integer counts (mismatches ≥ ⌈s_a·L⌉), not floats.
+- **Bounds reported.** Hoeffding bounds, which hold for any distribution, and exact binomial tails under the i.i.d. per-token model. The exact tails are much tighter at our key lengths.
+- **Cost.** Only a blind forger (mismatch ≈ 0.5) is simulated so far. The cloning forger that the thresholds are designed against is roadmap R3.
+
+## ADR-014: PNS detection rules
+
+- **Decision.** The session aborts with `ABORT_EAVESDROP` (variant `PNS`) if either rule fires:
+  1. The single-photon yield lower bound satisfies Y₁ᴸ ≤ 0.
+  2. The number of decoy detections falls outside its exact binomial acceptance interval, set so an honest channel triggers it with probability at most 10⁻⁶.
+- **Rationale.** A PNS attacker tuned to match the signal gain cannot also match the decoy gain. In simulation, decoy detections drop about 4× and Y₁ᴸ goes negative, while token fidelity is untouched.
+
+## ADR-015: Frontend toolchain
+
+- **Decision.** Vite 6, React 18.3.1, Tailwind CSS 3.4.19, Recharts 3.10.1 (which needs `react-is` 18.3.1) and Axios 1.20.0. All versions are pinned exactly, with `package-lock.json` committed. Tests use Vitest with Testing Library.
+- **Rationale.**
+  - Create React App was deprecated in 2025.
+  - Tailwind 4 drops `tailwind.config.js`.
+  - Recharts 2 is end-of-life.
+  - `@testing-library/jest-dom` 6.10.0 is a deprecated, broken release, so 6.9.1 is pinned instead.
+
+---
+
+## Known risks
+
+| Risk | Impact | Mitigation |
+|---|---|---|
+| Noise parameters changed without recalibration | False forgery aborts on an honest channel | Thresholds are derived from the configured noise at startup (ADR-013), so they stay consistent automatically. Raising noise until e_h ≥ e_f raises `ThresholdConfigurationError` instead of failing silently. |
+| Render free-tier cold start or restart | First request is slow; in-memory sessions are lost | UptimeRobot ping every 5 min; 60 s client timeout; record a backup demo video; keep a local run ready. |
+| Library API changes (Qiskit and others) | Backend breaks on upgrade | Pin backend versions in `requirements.txt` to the tested set (see testing.md §5). Do not upgrade right before a demo. |
+| Over-interpreting the simulation | Claims that exceed what is modelled | Limitations are listed in architecture.md §9 and THREAT_MODEL.md §5. |
