@@ -53,7 +53,7 @@ While the theoretical math is bulletproof, simulating continuous physical phenom
 
 * **The Risk:** The Decoy-State method relies on continuous optical variables (mean photon intensity levels). IBM Qiskit is a discrete-variable simulator (it works in binary qubits: 0s and 1s).
 * **Current Workaround:** In `decoy_states.py`, we approximate intensity modulation by randomly assigning classical array weights to simulate Yield and BER variances.
-* **Impact:** This is a software abstraction of a hardware reality. While the statistical watchdog handles the math correctly, the Qiskit circuit itself is not physically firing multi-photon pulses. *Note: If judges ask, acknowledge this explicitly. It shows deep hardware understanding.*
+* **Impact:** This is a software abstraction of a hardware reality. While the statistical watchdog handles the math correctly, the Qiskit circuit itself is not physically firing multi-photon pulses. 
 
 ### Risk 2: Hardcoded Depolarizing Noise Thresholds (False Positives)
 
@@ -64,7 +64,7 @@ While the theoretical math is bulletproof, simulating continuous physical phenom
 ### Risk 3: Classical Simulation Bottleneck (UI Latency)
 
 * **The Risk:** Running complex density matrix algebra and Qiskit `StatevectorSimulator` for large key lengths is extremely CPU-intensive on a standard laptop.
-* **Impact:** When the judge clicks "Execute Forgery Attack" on the React dashboard, the FastAPI backend might take 3 to 5 seconds to calculate the fidelity and mismatch arrays before responding.
+* **Impact:** When someone clicks "Execute Forgery Attack" on the React dashboard, the FastAPI backend might take 3 to 5 seconds to calculate the fidelity and mismatch arrays before responding.
 * **Mitigation:** For the live hackathon demo, we cap the simulated key length ($L$) to a smaller, manageable array size (e.g., 1,024 bits instead of 100,000 bits) to ensure the Recharts visualization updates snappily during the presentation.
 * **Resolved:** Optimized Qiskit state caching allows key lengths of $L=4096$ to execute in 0.11s, improving the exact binomial forgery bound to $1.5 \times 10^{-16}$ without UI latency.
 
